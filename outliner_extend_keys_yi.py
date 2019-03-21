@@ -18,23 +18,22 @@
 #
 # outliner_extend_keys_yi.py
 
-import bpy
-
 
 bl_info = {
     'name' : "Outliner Extend Keys",
     'description' : "Outliner Extend Keys",
-    'author' : "Yi Danyang",
-    'version' : ( 0, 0, 3 ),
-    'blender' : ( 2, 6, 9, 1 ),
+    'author' : "Yi Danyang, Ken Jiang",
+    'version' : ( 0, 0, 4 ),
+    'blender' : ( 2, 80, 0 ),
     'api' : 61076,
-    'location' : '[Outliner]Hotkey: up/down + [shift]; (alt + wheel up/down) + [shift]; shift + (double)LMB; shift v/s/r',
-    'warning' : "Alpha",
+    'location' : "",
+    'warning' : "",
     'category' : 'Outliner',
     "wiki_url" : "https://github.com/nirenyang/Blender_Addon_-_Outliner_Extend_Keys",
     "tracker_url" : "http://www.blenderartists.org/forum/showthread.php?303375-Addon-Outliner-Extend-Keys",
 }
 
+import bpy
 
 ##
 ## Force VSR Begin
@@ -42,13 +41,14 @@ bl_info = {
 enum_vsr = [( 'V', 'v', 'hide' ),
             ( 'S', 's', 'hide_select' ),
             ( 'R', 'r', 'hide_render' ),]
+
 class ObjectSetVSR(bpy.types.Operator):
     """Object Set VSR"""
     bl_idname = "object.set_vsr"
     bl_label = "Object Set VSR"
     bl_options = {'REGISTER', 'UNDO'}
 
-    input_vsr = bpy.props.EnumProperty( name='arrows', description='Arrow Types', items=enum_vsr)
+    input_vsr: bpy.props.EnumProperty( name='arrows', description='Arrow Types', items=enum_vsr)
 
     @classmethod
     def poll(cls, context):
@@ -57,10 +57,13 @@ class ObjectSetVSR(bpy.types.Operator):
 
     def execute(self, context):
         if self.input_vsr == 'V':
-            tmp = not context.active_object.hide
+            tmp = not context.active_object.hide_viewport
+            print(tmp)
+            print(context.selected_objects)
             for i in context.selected_objects:
-                if i.hide != tmp:
-                    i.hide = tmp
+                print(i.hide_viewport)
+                if i.hide_viewport != tmp:
+                    i.hide_viewport = tmp
         elif self.input_vsr == 'S':
             tmp = not context.active_object.hide_select
             for i in context.selected_objects:
@@ -100,12 +103,12 @@ class ObjectQueueSelect(bpy.types.Operator):
     bl_label = "Object Queue Select"
     bl_options = {'REGISTER', 'UNDO'}
     
-    ctrlOn = bpy.props.BoolProperty( name='ctrl', description='ctrl bool') #反选
+    ctrlOn: bpy.props.BoolProperty( name='ctrl', description='ctrl bool') #反选
     
     @classmethod
     def poll(cls, context):
         space = context.space_data
-        return context.area.type == 'OUTLINER' and space.display_mode in {'ALL_SCENES', }    #'CURRENT_SCENE'}
+        return context.area.type == 'OUTLINER' # and space.display_mode in {'ALL_SCENES', }    #'CURRENT_SCENE'}
         
     def execute(self, context):
         # import locale
@@ -124,7 +127,7 @@ class ObjectQueueSelect(bpy.types.Operator):
         if abs(select_id-active_id) < 2:
             return {'FINISHED'}
         for i in range(ids[0], ids[1]):
-            context.scene.objects[sorted_names[i]].select = True
+            context.scene.objects[sorted_names[i]].select_set(True)
         return {'FINISHED'}
         
 def registerObjectQueueSelect():
@@ -161,14 +164,14 @@ class ObjectArrowAndWheelSelect(bpy.types.Operator):
     bl_label = "Object Arrow and Wheel Select "
     bl_options = {'REGISTER', 'UNDO'}
     
-    shiftOn     = bpy.props.BoolProperty(name='shift', description='Shift Bool')
-    input_arrow = bpy.props.EnumProperty(name='arrows', description='Arrow Types', items=enum_arrow)
-    input_wheel = bpy.props.EnumProperty(name='wheels', description='Wheel Types', items=enum_wheel)
+    shiftOn: bpy.props.BoolProperty(name='shift', description='Shift Bool')
+    input_arrow: bpy.props.EnumProperty(name='arrows', description='Arrow Types', items=enum_arrow)
+    input_wheel: bpy.props.EnumProperty(name='wheels', description='Wheel Types', items=enum_wheel)
     
     @classmethod
     def poll(cls, context):
         space = context.space_data
-        return context.area.type == 'OUTLINER' and space.display_mode in {'ALL_SCENES', }    #'CURRENT_SCENE'}
+        return context.area.type == 'OUTLINER' # and space.display_mode in {'ALL_SCENES', }    #'CURRENT_SCENE'}
 
     def execute(self, context):
         # import locale
@@ -202,8 +205,8 @@ class ObjectArrowAndWheelSelect(bpy.types.Operator):
                         else:
                             next_id = curr_id+1
                         
-                context.scene.objects.active = context.scene.objects[sorted_names[next_id]]
-                context.active_object.select = True
+                context.view_layer.objects.active = context.scene.objects[sorted_names[next_id]]
+                context.active_object.select_set(True)
             break
         return {'FINISHED'}
         
@@ -266,7 +269,6 @@ def unregister():
     unregisterObjectSetVSR()
     unregisterObjectQueueSelect()
     unregisterObjectArrowAndWheelSelect()
-
 
 if __name__ == "__main__":
     register()
